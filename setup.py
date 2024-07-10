@@ -12,7 +12,7 @@ setup(
     author_email='austaining@gmail.com',
 
     # License
-    license='RPI',  
+    license='MIT License',  
 
     # Packages to install
     packages=find_packages(),
