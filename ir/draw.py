@@ -42,10 +42,10 @@ def plot_points_and_arrows(image_path1, image_path2, excel_path, output_path1, o
     plt.close()
     print(f"save to {output_path2}")
 
-
-image_path2 = 'C:\\Users\\austa\\Downloads\\nineth_ana\\ref.tif'
-image_path1 = 'C:\\Users\\austa\\Downloads\\nineth_ana\\al.tif'
-excel_path = 'C:\\Users\\austa\\Downloads\\nineth\\matched_kpwithcontrast.xlsx'
-output_path1 = 'C:\\Users\\austa\\Downloads\\nineth_ana\\manual1.png'
-output_path2 = 'C:\\Users\\austa\\Downloads\\nineth_ana\\manual2.png'
-plot_points_and_arrows(image_path1, image_path2, excel_path, output_path1, output_path2)
+if __name__ == "__main__":
+    image_path2 = 'C:\\Users\\austa\\Downloads\\nineth_ana\\ref.tif'
+    image_path1 = 'C:\\Users\\austa\\Downloads\\nineth_ana\\al.tif'
+    excel_path = 'C:\\Users\\austa\\Downloads\\nineth\\matched_kpwithcontrast.xlsx'
+    output_path1 = 'C:\\Users\\austa\\Downloads\\nineth_ana\\manual1.png'
+    output_path2 = 'C:\\Users\\austa\\Downloads\\nineth_ana\\manual2.png'
+    plot_points_and_arrows(image_path1, image_path2, excel_path, output_path1, output_path2)
