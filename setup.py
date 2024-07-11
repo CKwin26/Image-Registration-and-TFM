@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='ir',
     version='0.1',
-    packages=find_packages(),
+    packages=find_packages(),  # 自动查找并包括所有包
     install_requires=[
         'numpy>=1.16.2',
         'matplotlib>=3.0',
