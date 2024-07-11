@@ -61,7 +61,7 @@ def crop_image(image, x_start, x_end, y_start, y_end):
     return image[y_start:y_end, x_start:x_end]
 
 def main(image_paths):
-    output_dir = 'C:\\Users\\austa\\Downloads\\0.4
+    output_dir = 'C:\\Users\\austa\\Downloads\\0.4'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
