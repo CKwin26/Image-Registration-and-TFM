@@ -385,7 +385,7 @@ def enhance_contrast_automatically(reference_image, moving_image, regions, outp,
     # Save matches data to Excel
     matches_df = pd.DataFrame(matches_data)
     output_dir = outp
-    matches_df.to_excel(os.path.join(ouutp, 'matches_data.xlsx'), index=False)
+    matches_df.to_excel(os.path.join(outp, 'matches_data.xlsx'), index=False)
     
     return enhanced_ref_image, enhanced_mov_image,matches_df
 
