@@ -45,7 +45,7 @@ def plot_points_and_arrows(image_path1, image_path2, excel_path, output_path1, o
 
 def main(image_paths,excelp, picp1,picp2):
     image_path1=image_paths[0]
-    image_path1=image_paths[1]
+    image_path2=image_paths[1]
     plot_points_and_arrows(image_path1, image_path2, excel_path, output_path1, output_path2)
 
 if __name__ == "__main__":
