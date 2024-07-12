@@ -379,27 +379,13 @@ def enhance_contrast_automatically(reference_image, moving_image, regions, outp,
         # Use the best found contrast limit for this region
         contrast_limits[i] = contrast_limits[i]
 
-    # If no section met the threshold, use the section with the highest number of matches
-    '''if max_matches < num_keypoints_threshold:
-        print(f"Using the best section {best_section_index} with {max_matches} matches for further enhancement")
-        x_start, y_start, x_end, y_end = regions[best_section_index]
-        sector_ref = reference_image[y_start:y_end, x_start:x_end]
-        sector_mov = moving_image[y_start:y_end, x_start:x_end]
-        clahe = cv2.createCLAHE(clipLimit=contrast_limits[best_section_index], tileGridSize=(27, 27))
-        enhanced_ref_sector = clahe.apply(sector_ref)
-        enhanced_mov_sector = clahe.apply(sector_mov)
-        enhanced_ref_image[y_start:y_end, x_start:x_end] = enhanced_ref_sector
-        enhanced_mov_image[y_start:y_end, x_start:x_end] = enhanced_mov_sector
-        keypoints_sections[f'section_{best_section_index+1}'] = best_section_keypoints
-        descriptors_sections[f'section_{best_section_index+1}'] = best_section_descriptors'''
-    print(matches_data)
     
     
     
     # Save matches data to Excel
     matches_df = pd.DataFrame(matches_data)
-    output_dir = outd
-    matches_df.to_excel(os.path.join(outd, 'matches_data.xlsx'), index=False)
+    output_dir = outp
+    matches_df.to_excel(os.path.join(ouutp, 'matches_data.xlsx'), index=False)
     
     return enhanced_ref_image, enhanced_mov_image,matches_df
 
