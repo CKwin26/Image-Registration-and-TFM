@@ -60,7 +60,7 @@ def align_images_orb(reference_image, moving_image, mask_size):
 def crop_image(image, x_start, x_end, y_start, y_end):
     return image[y_start:y_end, x_start:x_end]
 
-def main(image_paths):
+def main(image_paths,output_dir):
     output_dir = 'C:\\Users\\austa\\Downloads\\0.4'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -95,7 +95,8 @@ def main(image_paths):
     axs[1].imshow(aligned_image_cropped, cmap='gray')
     axs[1].set_title('Aligned and Cropped Image')
     plt.show()
-
+    
+    return aligned_image_cropped,reference_image_cropped
 if __name__ == "__main__":
     image_paths = [
         'C:\\Users\\austa\\Downloads\\eighth_0.4\\Day 0 + 88bit.tif',
