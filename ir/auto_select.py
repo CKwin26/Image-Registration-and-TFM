@@ -61,7 +61,7 @@ def find_top_keypoints(image, keypoints, descriptors, mask, num_keypoints=2000):
     top_descriptors = descriptors[top_indices]
     return top_keypoints, top_descriptors
 
-def find_new_keypoints(reference_image, moving_image, keypoints, descriptors, mask, patch_size=100, hamming_threshold=180):
+def find_new_keypoints(reference_image, moving_image, keypoints, descriptors, mask, patch_size=100, hamming_threshold=130):
     orb = cv2.ORB_create()
     new_keypoints = []
     matches_list = []
@@ -186,10 +186,10 @@ def save_to_excel(matches_list, distances, output_path):
         mov_x, mov_y = int(kp2.pt[0]), int(kp2.pt[1])
         data.append({
             "Match Index": i + 1,
-            "Reference X": ref_x,
-            "Reference Y": ref_y,
-            "Moving X": mov_x,
-            "Moving Y": mov_y,
+            "x1": ref_x,
+            "y1": ref_y,
+            "x2": mov_x,
+            "y2": mov_y,
             "Distance": dist
         })
     
