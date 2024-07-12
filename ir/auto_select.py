@@ -239,7 +239,7 @@ def divide_image_into_regions(image):
                 regions.append((x_start, y_start, x_end, y_end))
     
     return regions
-def enhance_contrast_automatically(reference_image, moving_image, regions, num_keypoints_threshold=200, max_iterations=30,outp):
+def enhance_contrast_automatically(reference_image, moving_image, regions, outp,num_keypoints_threshold=200, max_iterations=30):
     contrast_limits = [5.0] * len(regions)  # Initial contrast limits for each region
     orb = cv2.ORB_create()
 
