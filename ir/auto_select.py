@@ -409,7 +409,6 @@ def main(refp,movp,outp):
     # Set image paths and output paths
     reference_image_path = refp
     moving_image_path = movp
-    output_excel_path = excelp
     output_dir = outp
 
     # Create output directory (if it does not exist)
