@@ -7,19 +7,10 @@ import pandas as pd
 from skimage.filters import threshold_otsu, gaussian
 from skimage.morphology import remove_small_objects, binary_closing, disk
 
-def load_and_resize_images(paths, max_size=1200):
-    """Load and resize images from the given paths."""
+def load_images(paths):
+    """Load images from the given paths."""
     images = [imageio.imread(path) for path in paths]
-    resized_images = [resize_image(image, max_size) for image in images]
-    return resized_images
-
-def resize_image(image, max_size=800):
-    """Resize image to fit within the specified maximum size."""
-    height, width = image.shape[:2]
-    if max(height, width) > max_size:
-        scale = max_size / float(max(height, width))
-        image = cv2.resize(image, (int(width * scale), int(height * scale)))
-    return image
+    return images
 
 def enhance_contrast(image):
     """Enhance the contrast of the image using CLAHE."""
@@ -63,21 +54,18 @@ def manual_select_keypoints(images, titles=["Reference Image", "Moving Image"]):
         if event == cv2.EVENT_LBUTTONDOWN:
             # Find the point with the minimum gray value within a 10x10 box
             min_point = find_min_grayvalue_point(images[img_index], x, y)
-            print(img_index)
             keypoints[img_index].append(min_point)
-            print(keypoints[img_index])
             cv2.circle(images[img_index], min_point, 5, (0, 255, 0), -1)
             cv2.putText(images[img_index], str(len(keypoints[img_index])), min_point, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             cv2.imshow(titles[img_index], images[img_index])
             if img_index == 0:
                 selected_point[0] = min_point
-                
                 draw_rectangle_on_other_image(*min_point)
             elif img_index == 1:
                 selected_point[1] = min_point
                 clear_rectangle_on_other_image()
-               
         elif event == cv2.EVENT_RBUTTONDOWN:
+            # Check if a point is selected for removal
             for i, (px, py) in enumerate(keypoints[img_index]):
                 if (px - 10 <= x <= px + 10) and (py - 10 <= y <= py + 10):
                     keypoints[img_index].pop(i)
@@ -95,26 +83,31 @@ def manual_select_keypoints(images, titles=["Reference Image", "Moving Image"]):
         cv2.imshow(titles[1], images[1])
 
     def clear_rectangle_on_other_image():
-        images[1] = cv2.imread(image_paths[1], cv2.IMREAD_GRAYSCALE)
+        images[1] = original_images[1].copy()
         redraw_images()
 
     def redraw_images():
         for img_index in range(2):
-            images[img_index] = cv2.imread(image_paths[img_index], cv2.IMREAD_GRAYSCALE)
-            images[img_index] = resize_image(images[img_index])  # Resize the reloaded images
+            images[img_index] = original_images[img_index].copy()
             for i, (x, y) in enumerate(keypoints[img_index]):
                 cv2.circle(images[img_index], (x, y), 5, (0, 255, 0), -1)
                 cv2.putText(images[img_index], str(i + 1), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             cv2.imshow(titles[img_index], images[img_index])
 
+    def resize_image(image, max_size=800):
+        height, width = image.shape[:2]
+        if max(height, width) > max_size:
+            scale = max_size / float(max(height, width))
+            image = cv2.resize(image, (int(width * scale), int(height * scale)))
+        return image
+
     for i, img in enumerate(images):
+        img = resize_image(img)
         cv2.imshow(titles[i], img)
         cv2.setMouseCallback(titles[i], select_point, param={"img_index": i})
     
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-    print(keypoints[0])
-    print(keypoints[1])
     return keypoints[0], keypoints[1]
 
 def compute_distances(keypoints1, keypoints2):
@@ -147,9 +140,13 @@ def main(image_paths, outd):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    images = load_and_resize_images(image_paths)
-    reference_image = images[0]
-    moving_image = images[1]
+    images = load_images(image_paths)
+    reference_image = cv2.convertScaleAbs(images[0])
+    moving_image = cv2.convertScaleAbs(images[1])
+
+    # Save the original images for later use
+    global original_images
+    original_images = [reference_image.copy(), moving_image.copy()]
 
     # Apply Gaussian blur and threshold to create binary masks for both images
     blurred_reference = gaussian(reference_image, sigma=2)
@@ -174,18 +171,14 @@ def main(image_paths, outd):
     enhanced_moving_image = enhance_contrast(masked_moving_image)
 
     # Manual selection of keypoints
-    ref_image_for_selection = cv2.cvtColor(enhanced_reference_image, cv2.COLOR_GRAY2BGR)
-    mov_image_for_selection = cv2.cvtColor(enhanced_moving_image, cv2.COLOR_GRAY2BGR)
+    ref_image_for_selection = cv2.cvtColor(reference_image, cv2.COLOR_GRAY2BGR)
+    mov_image_for_selection = cv2.cvtColor(moving_image, cv2.COLOR_GRAY2BGR)
 
     print("Select keypoints on the reference and moving images")
     keypoints_ref, keypoints_mov = manual_select_keypoints([ref_image_for_selection.copy(), mov_image_for_selection.copy()], titles=["Reference Image", "Moving Image"])
 
     # Ensure the number of selected keypoints matches
     if len(keypoints_ref) != len(keypoints_mov):
-        print(len(keypoints_ref))
-        print(len(keypoints_mov))
-        print(keypoints_ref)
-        print(keypoints_mov)
         print("Error: The number of keypoints selected on both images must be the same.")
         return
 
