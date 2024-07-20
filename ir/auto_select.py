@@ -25,6 +25,37 @@ def adjust_threshold(image, threshold_scale):
     binary_image = image < adjusted_thresh  # Invert the binary mask
     return binary_image
 
+
+def create_circle_mask(img, radius=1000):
+    height, width = img.shape[:2]
+    mask = np.zeros((height, width), dtype=np.uint8)
+    center_x, center_y = width // 2, height // 2
+    cv2.circle(mask, (center_x, center_y), radius, 255, -1)
+    masked_image = cv2.bitwise_and(img, img, mask=mask)
+    return mask, masked_image
+
+def create_largest_contour_mask(image, threshold_scale=1.3):
+    def adjust_threshold(image, threshold_scale):
+        otsu_thresh = threshold_otsu(image)
+        adjusted_thresh = otsu_thresh * threshold_scale
+        binary_image = image < adjusted_thresh  # Invert the binary mask
+        return binary_image
+
+    blurred_image = gaussian(image, sigma=2)
+    adjusted_binary = adjust_threshold(blurred_image, threshold_scale)
+    adjusted_binary = remove_small_objects(adjusted_binary, min_size=100)
+    adjusted_binary = binary_closing(adjusted_binary, selem=disk(5))
+    adjusted_binary_uint8 = (adjusted_binary * 255).astype(np.uint8)
+    contours, _ = cv2.findContours(adjusted_binary_uint8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    mask = np.zeros_like(adjusted_binary_uint8)
+    if contours and len(contours) > 1:
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        second_largest_contour = contours[1]
+        cv2.drawContours(mask, [second_largest_contour], -1, (255), thickness=cv2.FILLED)
+    elif contours:
+        cv2.drawContours(mask, [contours[0]], -1, (255), thickness=cv2.FILLED)
+    return mask
+
 def apply_mask(original_image, binary_mask):
     masked_image = np.where(binary_mask, 0, original_image)  # Set mask area to 0 (black), keep other areas unchanged
     return masked_image
@@ -405,16 +436,27 @@ def main(refp,movp,outp):
     images = load_images(image_paths)
     reference_image = images[0]
     moving_image = images[1]
+    
 
-    # Get masks
-    mask_reference_image = mask(reference_image)
-    mask_moving_image = mask(moving_image)
+    # Create and apply masks
+    circle_mask, masked_reference_image_circle = create_circle_mask(reference_image)
+    largest_contour_mask = create_largest_contour_mask(masked_reference_image_circle)
+    inverted_largest_contour_mask = cv2.bitwise_not(largest_contour_mask)
+    combined_mask = cv2.bitwise_not(cv2.bitwise_and(circle_mask, inverted_largest_contour_mask))
+    # Create and apply masks
+    circle_mask2, masked_reference_image_circle2 = create_circle_mask(moving_image)
+    largest_contour_mask2 = create_largest_contour_mask(masked_reference_image_circle2)
+    inverted_largest_contour_mask2 = cv2.bitwise_not(largest_contour_mas2k)
+    combined_mask2 = cv2.bitwise_not(cv2.bitwise_and(circle_mask2, inverted_largest_contour_mask2))
+    
+    masked_reference_image = apply_mask(reference_image, combined_mask)
+    masked_second_image = apply_mask(moving_image, combined_mask2)
 
     # Divide images into regions
     regions = divide_image_into_regions(mask_reference_image)
 
     # Automatically enhance contrast and generate keypoints and descriptors
-    enhanced_ref_image, enhanced_mov_image,excel = enhance_contrast_automatically(mask_reference_image, moving_image, regions,outp)
+    enhanced_ref_image, enhanced_mov_image,excel = enhance_contrast_automatically(mask_reference_image, masked_second_image, regions,outp)
     return excel
     
 if __name__ == "__main__":
