@@ -34,7 +34,7 @@ def create_circle_mask(img, radius=1000):
     masked_image = cv2.bitwise_and(img, img, mask=mask)
     return mask, masked_image
 
-def create_largest_contour_mask(image, threshold_scale=1.3):
+def create_largest_contour_mask(image, threshold_scale=1.8):
     def adjust_threshold(image, threshold_scale):
         otsu_thresh = threshold_otsu(image)
         adjusted_thresh = otsu_thresh * threshold_scale
