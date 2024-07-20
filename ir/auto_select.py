@@ -446,17 +446,17 @@ def main(refp,movp,outp):
     # Create and apply masks
     circle_mask2, masked_reference_image_circle2 = create_circle_mask(moving_image)
     largest_contour_mask2 = create_largest_contour_mask(masked_reference_image_circle2)
-    inverted_largest_contour_mask2 = cv2.bitwise_not(largest_contour_mas2k)
+    inverted_largest_contour_mask2 = cv2.bitwise_not(largest_contour_mask2)
     combined_mask2 = cv2.bitwise_not(cv2.bitwise_and(circle_mask2, inverted_largest_contour_mask2))
     
     masked_reference_image = apply_mask(reference_image, combined_mask)
     masked_second_image = apply_mask(moving_image, combined_mask2)
 
     # Divide images into regions
-    regions = divide_image_into_regions(mask_reference_image)
+    regions = divide_image_into_regions(masked_reference_image)
 
     # Automatically enhance contrast and generate keypoints and descriptors
-    enhanced_ref_image, enhanced_mov_image,excel = enhance_contrast_automatically(mask_reference_image, masked_second_image, regions,outp)
+    enhanced_ref_image, enhanced_mov_image,excel = enhance_contrast_automatically(masked_reference_image, masked_second_image, regions,outp)
     return excel
     
 if __name__ == "__main__":
