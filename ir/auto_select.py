@@ -1,5 +1,6 @@
 import imageio
 import pandas as pd
+import os
 from skimage.filters import threshold_otsu, gaussian
 from skimage.morphology import binary_closing, disk, remove_small_objects, label
 from scipy.ndimage.measurements import center_of_mass
