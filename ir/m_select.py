@@ -99,7 +99,15 @@ def manual_select_keypoints(images, titles=["Reference Image", "Moving Image"]):
                 cv2.putText(images[img_index], str(i + 1), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             cv2.imshow(titles[img_index], images[img_index])
 
+    def resize_image(image, max_size=800):
+        height, width = image.shape[:2]
+        if max(height, width) > max_size:
+            scale = max_size / float(max(height, width))
+            image = cv2.resize(image, (int(width * scale), int(height * scale)))
+        return image
+
     for i, img in enumerate(images):
+        img = resize_image(img)
         cv2.imshow(titles[i], img)
         cv2.setMouseCallback(titles[i], select_point, param={"img_index": i})
     
@@ -133,7 +141,7 @@ def save_to_excel(keypoints1, keypoints2, distances, output_path):
     df = pd.DataFrame(data)
     df.to_excel(output_path, index=False)
 
-def main(image_paths,outd):
+def main(image_paths, outd):
     """Main function to process images and manually select keypoints."""
     output_dir = outd
     if not os.path.exists(output_dir):
@@ -213,4 +221,5 @@ if __name__ == "__main__":
         'C:\\Users\\austa\\Downloads\\eighth_0.4\\Day 0 + 88bit.tif',
         'C:\\Users\\austa\\Downloads\\eighth_0.4\\Day 4 + 88bit.tif'
     ]
-    main(image_paths)
+    outd = 'C:\\Users\\austa\\Downloads\\output'
+    main(image_paths, outd)
