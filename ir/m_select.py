@@ -44,20 +44,27 @@ def find_min_grayvalue_point(image, x, y, box_size=10):
     
     return (min_x, min_y)
 
-def manual_select_keypoints(images, titles=["Reference Image", "Moving Image"]):
+def resize_image(image, scale):
+    """Resize the image by a given scale."""
+    width = int(image.shape[1] * scale)
+    height = int(image.shape[0] * scale)
+    return cv2.resize(image, (width, height))
+
+def manual_select_keypoints(images, titles=["Reference Image", "Moving Image"], scale=0.5):
     """Manually select keypoints on the images."""
     keypoints = [[], []]
     selected_point = [-1, -1]
+    
+    display_images = [resize_image(image, scale) for image in images]
 
     def select_point(event, x, y, flags, param):
         img_index = param["img_index"]
         if event == cv2.EVENT_LBUTTONDOWN:
-            # Find the point with the minimum gray value within a 10x10 box
-            min_point = find_min_grayvalue_point(images[img_index], x, y)
+            min_point = find_min_grayvalue_point(images[img_index], int(x / scale), int(y / scale))
             keypoints[img_index].append(min_point)
-            cv2.circle(images[img_index], min_point, 5, (0, 255, 0), -1)
-            cv2.putText(images[img_index], str(len(keypoints[img_index])), min_point, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            cv2.imshow(titles[img_index], images[img_index])
+            cv2.circle(display_images[img_index], (x, y), 5, (0, 255, 0), -1)
+            cv2.putText(display_images[img_index], str(len(keypoints[img_index])), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.imshow(titles[img_index], display_images[img_index])
             if img_index == 0:
                 selected_point[0] = min_point
                 draw_rectangle_on_other_image(*min_point)
@@ -65,9 +72,8 @@ def manual_select_keypoints(images, titles=["Reference Image", "Moving Image"]):
                 selected_point[1] = min_point
                 clear_rectangle_on_other_image()
         elif event == cv2.EVENT_RBUTTONDOWN:
-            # Check if a point is selected for removal
             for i, (px, py) in enumerate(keypoints[img_index]):
-                if (px - 10 <= x <= px + 10) and (py - 10 <= y <= py + 10):
+                if (int(px * scale) - 10 <= x <= int(px * scale) + 10) and (int(py * scale) - 10 <= y <= int(py * scale) + 10):
                     keypoints[img_index].pop(i)
                     if len(keypoints[1 - img_index]) > i:
                         keypoints[1 - img_index].pop(i)
@@ -75,34 +81,26 @@ def manual_select_keypoints(images, titles=["Reference Image", "Moving Image"]):
                     return
 
     def draw_rectangle_on_other_image(x, y):
-        x_min = max(0, x - 10)
-        x_max = min(images[1].shape[1], x + 10)
-        y_min = max(0, y - 10)
-        y_max = min(images[1].shape[0], y + 10)
-        cv2.rectangle(images[1], (x_min, y_min), (x_max, y_max), (255, 0, 0), 2)
-        cv2.imshow(titles[1], images[1])
+        x_min = max(0, int(x * scale) - 10)
+        x_max = min(display_images[1].shape[1], int(x * scale) + 10)
+        y_min = max(0, int(y * scale) - 10)
+        y_max = min(display_images[1].shape[0], int(y * scale) + 10)
+        cv2.rectangle(display_images[1], (x_min, y_min), (x_max, y_max), (255, 0, 0), 2)
+        cv2.imshow(titles[1], display_images[1])
 
     def clear_rectangle_on_other_image():
-        images[1] = original_images[1].copy()
+        display_images[1] = resize_image(cv2.imread(image_paths[1], cv2.IMREAD_GRAYSCALE), scale)
         redraw_images()
 
     def redraw_images():
         for img_index in range(2):
-            images[img_index] = original_images[img_index].copy()
+            display_images[img_index] = resize_image(cv2.imread(image_paths[img_index], cv2.IMREAD_GRAYSCALE), scale)
             for i, (x, y) in enumerate(keypoints[img_index]):
-                cv2.circle(images[img_index], (x, y), 5, (0, 255, 0), -1)
-                cv2.putText(images[img_index], str(i + 1), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            cv2.imshow(titles[img_index], images[img_index])
+                cv2.circle(display_images[img_index], (int(x * scale), int(y * scale)), 5, (0, 255, 0), -1)
+                cv2.putText(display_images[img_index], str(i + 1), (int(x * scale), int(y * scale)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.imshow(titles[img_index], display_images[img_index])
 
-    def resize_image(image, max_size=800):
-        height, width = image.shape[:2]
-        if max(height, width) > max_size:
-            scale = max_size / float(max(height, width))
-            image = cv2.resize(image, (int(width * scale), int(height * scale)))
-        return image
-
-    for i, img in enumerate(images):
-        img = resize_image(img)
+    for i, img in enumerate(display_images):
         cv2.imshow(titles[i], img)
         cv2.setMouseCallback(titles[i], select_point, param={"img_index": i})
     
@@ -134,19 +132,12 @@ def save_to_excel(keypoints1, keypoints2, distances, output_path):
     df = pd.DataFrame(data)
     df.to_excel(output_path, index=False)
 
-def main(image_paths, outd):
+def main(image_paths,outp):
     """Main function to process images and manually select keypoints."""
-    output_dir = outd
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
+    output_dir = outp
     images = load_images(image_paths)
     reference_image = cv2.convertScaleAbs(images[0])
     moving_image = cv2.convertScaleAbs(images[1])
-
-    # Save the original images for later use
-    global original_images
-    original_images = [reference_image.copy(), moving_image.copy()]
 
     # Apply Gaussian blur and threshold to create binary masks for both images
     blurred_reference = gaussian(reference_image, sigma=2)
@@ -160,7 +151,7 @@ def main(image_paths, outd):
 
     adjusted_binary_mov = adjust_threshold(blurred_moving, threshold_scale)
     adjusted_binary_mov = remove_small_objects(adjusted_binary_mov, min_size=1000)
-    adjusted_binary_mov = binary_closing(adjusted_binary_mov, selem=(disk(5)))
+    adjusted_binary_mov = binary_closing(adjusted_binary_mov, selem=disk(5))
 
     # Mask the reference and moving images
     masked_reference_image = apply_mask(reference_image, adjusted_binary_ref.copy())
@@ -175,7 +166,7 @@ def main(image_paths, outd):
     mov_image_for_selection = cv2.cvtColor(moving_image, cv2.COLOR_GRAY2BGR)
 
     print("Select keypoints on the reference and moving images")
-    keypoints_ref, keypoints_mov = manual_select_keypoints([ref_image_for_selection.copy(), mov_image_for_selection.copy()], titles=["Reference Image", "Moving Image"])
+    keypoints_ref, keypoints_mov = manual_select_keypoints([ref_image_for_selection.copy(), mov_image_for_selection.copy()], titles=["Reference Image", "Moving Image"], scale=0.5)
 
     # Ensure the number of selected keypoints matches
     if len(keypoints_ref) != len(keypoints_mov):
@@ -186,7 +177,7 @@ def main(image_paths, outd):
     distances = compute_distances(keypoints_ref, keypoints_mov)
     
     # Save matched points and distances to Excel
-    excel_output_path = os.path.join(output_dir, 'matched_points_and_distances_manual.xlsx')
+    excel_output_path = os.path.join(output_dir, 'matched_kpwithcontrast.xlsx')
     save_to_excel(keypoints_ref, keypoints_mov, distances, excel_output_path)
     print(f"Matched points and distances saved to {excel_output_path}")
 
@@ -211,8 +202,8 @@ def main(image_paths, outd):
 
 if __name__ == "__main__":
     image_paths = [
-        'C:\\Users\\austa\\Downloads\\eighth_0.4\\Day 0 + 88bit.tif',
-        'C:\\Users\\austa\\Downloads\\eighth_0.4\\Day 4 + 88bit.tif'
+        'C:\\Users\\austa\\Downloads\\nineth_ana\\ref.tif',
+        'C:\\Users\\austa\\Downloads\\nineth_ana\\al.tif'
     ]
-    outd = 'C:\\Users\\austa\\Downloads\\output'
-    main(image_paths, outd)
+    outp= 'C:\\Users\\austa\\Downloads\\nineth_ana'
+    main(image_paths)
